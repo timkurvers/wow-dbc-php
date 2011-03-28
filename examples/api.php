@@ -39,6 +39,9 @@ $dbc = new DBC('./dbcs/Sample.dbc');
 // Fetch the first record (zero-based); Will return null if no record was found
 $record = $dbc->getRecord(0);
 
+// Fetch a record by its first field (generally containing the id); Will return null if no record was found
+$record = $dbc->getRecordByID(4);
+
 // Check for the 11th record's existence
 $exists = $dbc->hasRecord(10);
 

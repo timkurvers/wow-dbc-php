@@ -39,8 +39,14 @@ $dbc = new DBC('./dbcs/Sample.dbc', DBCMap::fromINI('./maps/Sample.ini'));
 // Set up a new database exporter
 $dbe = new DBCDatabaseExporter();
 
-// And instruct it to export the given DBC (ensure the DBC has an attached map)
+// And instruct it to export the given DBC to the default table 'dbc' (ensure the DBC has an attached map)
 $dbe->export($dbc);
 
 // Alternatively supports exporting to a file by providing a second argument 
 $dbe->export($dbc, './export/sample.sql');
+
+// If you would rather export to a specific table, pass in a third parameter
+$dbe->export($dbc, null, 'my_table');
+
+// Or again, to a file
+$dbe->export($dbc, './export/sample.sql', 'my_table');
