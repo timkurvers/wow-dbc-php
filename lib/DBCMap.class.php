@@ -82,6 +82,13 @@ class DBCMap {
 	}
 	
 	/**
+	 * Destructs this mapping
+	 */
+	public function __destruct() {
+		$this->_fields = null;	
+	}
+	
+	/**
 	 * Returns the set of fields currently in this mapping
 	 */
 	public function getFields() {
