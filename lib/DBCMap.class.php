@@ -69,6 +69,11 @@ class DBCMap {
 	private $_fields = null;
 	
 	/**
+	 * Actual number of raw fields in this mapping
+	 */
+	private $_count = 0;
+	
+	/**
 	 * Constructs a new mapping (with optional given fields)
 	 */
 	public function __construct(array $fields=null) {
@@ -78,6 +83,7 @@ class DBCMap {
 				$rule = self::UINT_MASK;
 			}
 			$rule = (int)$rule;
+			$this->_count += self::countInBitmask($rule);
 		}
 	}
 	
@@ -96,6 +102,13 @@ class DBCMap {
 	}
 	
 	/**
+	 * Returns the actual amount of fields required in the DBC
+	 */
+	public function getFieldCount() {
+		return $this->_count;
+	}
+	
+	/**
 	 * Adds a field using given type and count
 	 */
 	public function add($field, $type=DBC::UINT, $count=0) {
@@ -109,6 +122,10 @@ class DBCMap {
 		}else if($type === DBC::STRING) {
 			$bitmask |= self::STRING_MASK;
 		}
+		if($this->exists($field)) {
+			$this->_count -= self::countInBitmask($this->_fields[$field]);
+		}
+		$this->_count += self::countInBitmask($bitmask);
 		$this->_fields[$field] = $bitmask;
 	}
 	
@@ -124,6 +141,7 @@ class DBCMap {
 	 */
 	public function remove($field) {
 		if($this->exists($field)) {
+			$this->_count -= self::countInBitmask($this->_fields[$field]);
 			unset($this->_fields[$field]);
 		}
 	}
@@ -162,6 +180,17 @@ class DBCMap {
 	}
 	
 	/**
+	 * Calculates the number of fields used up by the given bitmask
+	 */
+	public static function countInBitmask($bitmask) {
+		$count = max($bitmask & 0xFF, 1);
+		if($bitmask & self::STRING_MASK) {
+			$count += $count * DBC::LOCALIZATION;
+		}
+		return $count;
+	}
+	
+	/**
 	 * Constructs a new mapping from given INI-file
 	 */
 	public static function fromINI($ini) {
@@ -177,7 +206,7 @@ class DBCMap {
 		$samples = ($dbc->getRecordCount() > self::SAMPLES) ? self::SAMPLES : $dbc->getRecordCount();
 		
 		$block = $dbc->getStringBlock();
-		preg_match_all('#'.DBC::NULL_BYTE.'#', $block, $matches, PREG_OFFSET_CAPTURE);
+		preg_match_all('#\0#', $block, $matches, PREG_OFFSET_CAPTURE);
 		$strings = array();
 		foreach($matches[0] as $offset) {
 			$offset = (int)$offset[1] + 1;
