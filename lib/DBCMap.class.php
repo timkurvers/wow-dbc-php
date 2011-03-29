@@ -170,7 +170,7 @@ class DBCMap {
 		$samples = ($dbc->getRecordCount() > self::SAMPLES) ? self::SAMPLES : $dbc->getRecordCount();
 		
 		$block = $dbc->getStringBlock();
-		preg_match_all('#\0#', $block, $matches, PREG_OFFSET_CAPTURE);
+		preg_match_all('#'.DBC::NULL_BYTE.'#', $block, $matches, PREG_OFFSET_CAPTURE);
 		$strings = array();
 		foreach($matches[0] as $offset) {
 			$offset = (int)$offset[1] + 1;
