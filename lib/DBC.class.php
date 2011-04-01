@@ -68,7 +68,7 @@ class DBC implements IteratorAggregate {
 	/**
 	 * Denotes a string field type
 	 */
-	const STRING		= 's';
+	const STRING		= 'a';
 	
 	/**
 	 * Number of localization string fields
@@ -81,9 +81,9 @@ class DBC implements IteratorAggregate {
 	private $_handle = null;
 	
 	/**
-	 * Filesize of this DBC on disk in bytes
+	 * Holds path to this DBC on disk
 	 */
-	private $_size = 0;
+	private $_path = null;
 	
 	/**
 	 * Represents the index for the records in this DBC paired by ID/position
@@ -113,17 +113,17 @@ class DBC implements IteratorAggregate {
 	/**
 	 * String-block contains all strings defined in the DBC file
 	 */
-	private $_stringBlock = null;
+	private $_stringBlock = self::NULL_BYTE;
 	
 	/**
 	 * Size of the string-block
 	 */
-	private $_stringBlockSize = 0;
+	private $_stringBlockSize = 1;
 	
 	/**
-	 * Byte-offset of the string-block
+	 * Whether this DBC is writable (enables adding records and strings)
 	 */
-	private $_stringBlockOffset = 0;
+	private $_writable = true;
 	
 	/**
 	 * Constructs a new DBC instance from given path with an optional DBCMap to attach as the default
@@ -133,30 +133,45 @@ class DBC implements IteratorAggregate {
 			throw new DBCException('DBC "'.$path.'" could not be found');
 			return;
 		}
-		$this->_handle = fopen($path, 'rb');
-		$this->_size = filesize($path);
+		
+		$this->_path = $path;
+		
+		$this->_handle = @fopen($path, 'r+b');
+		if(!$this->_handle) {
+			$this->_handle = @fopen($path, 'rb');
+			$this->_writable = false;
+			if(!$this->_handle) {
+				throw new DBCException('DBC "'.$path.'" is not readable');
+				return;
+			}
+		}
+		$size = filesize($path);
 		
 		$sig = fread($this->_handle, 4);
 		if($sig !== self::SIGNATURE) {
 			throw new DBCException('DBC "'.$path.'" has an invalid signature and is therefore not valid');
 			return;
 		}
-		if($this->_size < 20) {
+		if($size < 20) {
 			throw new DBCException('DBC "'.$path.'" has a malformed header');
 			return;
 		}
 		
 		list(, $this->_recordCount, $this->_fieldCount, $this->_recordSize, $this->_stringBlockSize) = unpack(self::UINT.'4', fread($this->_handle, 16));
 		
-		$this->_stringBlockOffset = self::HEADER_SIZE + $this->_recordCount * $this->_recordSize;
-		fseek($this->_handle, $this->_stringBlockOffset);
-		if($this->_size < $this->_stringBlockOffset) {
-			throw new DBCException('DBC "'.$path.'" is short of '.($this->_stringBlockOffset - $this->_size).' bytes for '.$this->_recordCount.' records');
+		$offset = self::HEADER_SIZE + $this->_recordCount * $this->_recordSize;
+		
+		if($size < $offset) {
+			throw new DBCException('DBC "'.$path.'" is short of '.($offset - $size).' bytes for '.$this->_recordCount.' records');
 			return;
 		}
-		if($this->_stringBlockSize > 0) {
-			$this->_stringBlock = fread($this->_handle, $this->_size - $this->_stringBlockOffset);
+		fseek($this->_handle, $offset);
+		
+		if($size < $offset + $this->_stringBlockSize) {
+			throw new DBCException('DBC "'.$path.'" is short of '.($offset + $this->_stringBlockSize - $size).' bytes for string-block');
+			return;
 		}
+		$this->_stringBlock = fread($this->_handle, $this->_stringBlockSize);
 		
 		$this->attach($map);
 	}
@@ -165,6 +180,7 @@ class DBC implements IteratorAggregate {
 	 * Destructs this DBC instance
 	 */
 	public function __destruct() {
+		$this->finalize();
 		if($this->_handle !== null) {
 			fclose($this->_handle);
 			$this->_handle = null;
@@ -175,26 +191,127 @@ class DBC implements IteratorAggregate {
 	}
 	
 	/**
-	 * Attaches a mapping 
+	 * Finalizes this writable DBC, updating its header and writing the string block
 	 */
-	public function attach(DBCMap $map=null) {
-		$this->_map = $map;
+	public function finalize() {
+		$size = strlen($this->_stringBlock);
+		if($this->_handle !== null && $this->_writable && $this->_stringBlockSize !== $size) {
+			fseek($this->_handle, self::HEADER_SIZE + $this->_recordCount * $this->_recordSize);
+			fwrite($this->_handle, $this->_stringBlock);
+			
+			$this->_stringBlockSize = $size;
+			
+			fseek($this->_handle, 16);
+			fwrite($this->_handle, pack(self::UINT, $this->_stringBlockSize));
+		}
 	}
 	
 	/**
-	 * Generates an index of this DBC consisting of ID/position pairs
+	 * Attaches a mapping
 	 */
-	public function index() {
-		if($this->_index !== null) {
-			return;
+	public function attach(DBCMap $map=null) {
+		$this->_map = null;
+		if($map !== null) {
+			$delta = $map->getFieldCount() - $this->getFieldCount();
+			if($delta !== 0) {
+				throw new DBCException('Mapping holds '.$map->getFieldCount().' fields, but DBC "'.$this->_path.'" expects '.$this->getfieldCount());
+				return $this;
+			}
+			$this->_map = clone $map;
 		}
-		$this->_index = array();
-		fseek($this->_handle, DBC::HEADER_SIZE);
-		for($i=0; $i<$this->_recordCount; $i++) {
-			list(,$id) = unpack(self::UINT, fread($this->_handle, 4));
-			$this->_index[$id] = $i;
-			fseek($this->_handle, $this->_recordSize - 4, SEEK_CUR);
+		return $this;
+	}
+	
+	/**
+	 * Generates an index of this DBC consisting of ID/position pairs and optionally updates given ID to given position
+	 */
+	public function index($id=null, $position=null) {
+		if($this->_index === null) {
+			$this->_index = array();
+			fseek($this->_handle, DBC::HEADER_SIZE);
+			for($i=0; $i<$this->_recordCount; $i++) {
+				list(,$rid) = unpack(self::UINT, fread($this->_handle, 4));
+				$this->_index[$rid] = $i;
+				fseek($this->_handle, $this->_recordSize - 4, SEEK_CUR);
+			}
 		}
+		if($id !== null) {
+			$prev = array_search($position, $this->_index, true);
+			if($prev !== false) {
+				unset($this->_index[$prev]);
+			}
+			$this->_index[$id] = $position;
+		}
+		return $this;
+	}
+	
+	/**
+	 * Adds a set of scalar values as a record or adds given arrays as records (nesting is allowed)
+	 */
+	public function add() {
+		if(!$this->_writable || $this->_map === null) {
+			throw new DBCException('Adding records requires DBC "'.$this->_path.'" to be writable and have a valid mapping attached');
+			return $this;
+		}
+		
+		$args = func_get_args();
+		if(isset($args[0])) {
+			$scalars = true;
+			foreach($args as $arg) {
+				if($scalars && !is_scalar($arg)) {
+					$scalars = false;
+				}
+				if(is_array($arg)) {
+					call_user_func_array(array($this, __METHOD__), $arg);
+				}
+			}
+			if($scalars) {
+				$this->_add($args);
+			}
+		}
+		return $this;
+	}
+	
+	/**
+	 * Adds the given record of scalar values to the DBC being created
+	 */
+	private function _add(array $record) {
+		$fields = $this->_map->getFields();
+		
+		fseek($this->_handle, self::HEADER_SIZE + $this->_recordCount * $this->_recordSize);
+		
+		foreach($fields as $name=>$rule) {
+			$count = max($rule & 0xFF, 1);
+			for($i=0; $i<$count; $i++) {
+				$item = array_shift($record);
+				if($item === null) {
+					$value = pack(DBC::UINT, 0);
+				}else if($rule & DBCMap::UINT_MASK) {
+					$value = pack(DBC::UINT, $item);
+				}else if($rule & DBCMap::INT_MASK) {
+					$value = pack(DBC::INT, $item);
+				}else if($rule & DBCMap::FLOAT_MASK) {
+					$value = pack(DBC::FLOAT, $item);
+				}else if($rule & DBCMap::STRING_MASK) {
+					$offset = $this->addString($item);
+					$value = pack(DBC::UINT, $offset);
+				}
+				fwrite($this->_handle, $value);
+				if($rule & DBCMap::STRING_MASK) {
+					fseek($this->_handle, DBC::LOCALIZATION * DBC::FIELD_SIZE, SEEK_CUR);
+				}
+			}
+		}
+		
+		fseek($this->_handle, 4);
+		fwrite($this->_handle, pack(self::UINT, ++$this->_recordCount));
+	}
+	
+	/**
+	 * Whether this DBC is writable
+	 */
+	public function isWritable() {
+		return ($this->_handle !== null && $this->_writable);
 	}
 	
 	/**
@@ -205,10 +322,10 @@ class DBC implements IteratorAggregate {
 	}
 	
 	/**
-	 * Returns the size of this DBC on disk
+	 * Returns the path to the DBC on disk
 	 */
-	public function getSize() {
-		return $this->_size;
+	public function getPath() {
+		return $this->_path;
 	}
 	
 	/**
@@ -256,6 +373,16 @@ class DBC implements IteratorAggregate {
 	}
 	
 	/**
+	 * Whether this DBC has a record identified by given ID (first field)
+	 */
+	public function hasRecordByID($id) {
+		if($this->_index === null) {
+			$this->index();
+		}
+		return (isset($this->_index[$id]));
+	}
+	
+	/**
 	 * Returns the amount of fields in this DBC
 	 */
 	public function getFieldCount() {
@@ -287,7 +414,7 @@ class DBC implements IteratorAggregate {
 	 * Returns the string found in the string-block given by the offset in bytes (if any)
 	 */
 	public function getString($offset) {
-		if($this->_stringBlock === null || $offset < 1 || $offset > strlen($this->_stringBlock)) {
+		if($offset < 1 || $offset > strlen($this->_stringBlock)) {
 			return null;
 		}
 		$length = strpos($this->_stringBlock, self::NULL_BYTE, $offset) - $offset;
@@ -295,10 +422,48 @@ class DBC implements IteratorAggregate {
 	}
 	
 	/**
+	 * Adds a string to the string-block and returns the offset in bytes
+	 */
+	public function addString($string) {
+		if(!$this->_writable) {
+			throw new DBCException('Adding strings requires DBC "'.$this->path.'" to be writable');
+			return 0;
+		}
+		$offset = strlen($this->_stringBlock);
+		$this->_stringBlock .= $string.self::NULL_BYTE;
+		return $offset;
+	}
+	
+	/**
 	 * Returns the entire string-block
 	 */
 	public function getStringBlock() {
 		return $this->_stringBlock;
+	}
+	
+	/**
+	 * Creates an empty DBC using the given mapping (will overwrite any existing DBCs)
+	 */
+	public static function create($file, $count) {
+		$handle = @fopen($file, 'w+b');
+		if(!$handle) {
+			throw new DBCException('New DBC "'.$file.'" could not be created/opened for writing');
+			return null;
+		}
+		
+		$map = null;
+		if($count instanceof DBCMap) {
+			$map = $count;
+			$count = $map->getFieldCount();	
+		}
+		
+		fwrite($handle, self::SIGNATURE);
+		fwrite($handle, pack(self::UINT.'4', 0, $count, $count * self::FIELD_SIZE, 1));
+		fwrite($handle, self::NULL_BYTE);
+		fclose($handle);
+		
+		$dbc = new self($file, $map);
+		return $dbc;
 	}
 	
 }
