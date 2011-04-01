@@ -109,6 +109,35 @@ class DBCMap {
 	}
 	
 	/**
+	 * Returns the actual offset for given field
+	 */
+	public function getFieldOffset($field) {
+		$suffix = 0;
+		if(!isset($this->_fields[$field])) {
+			if(preg_match('#(.+?)(\d+?)$#', $field, $match) === 1) {
+				list(, $field, $suffix) = $match;
+				$suffix = (int)$suffix - 1;
+			}
+		}
+		
+		if(!isset($this->_fields[$field])) {
+			return -1;
+		}
+		
+		$target = $field;
+		
+		$offset = 0;
+		foreach($this->_fields as $field=>$rule) {
+			if($target === $field) {
+				$offset += self::countInBitmask($rule, $suffix);
+				return $offset;
+			}
+			$offset += self::countInBitmask($rule);
+		}
+		return -1;
+	}
+	
+	/**
 	 * Adds a field using given type and count
 	 */
 	public function add($field, $type=DBC::UINT, $count=0) {
@@ -182,8 +211,8 @@ class DBCMap {
 	/**
 	 * Calculates the number of fields used up by the given bitmask
 	 */
-	public static function countInBitmask($bitmask) {
-		$count = max($bitmask & 0xFF, 1);
+	public static function countInBitmask($bitmask, $upTo=PHP_INT_MAX) {
+		$count = min(max($bitmask & 0xFF, 1), $upTo);
 		if($bitmask & self::STRING_MASK) {
 			$count += $count * DBC::LOCALIZATION;
 		}
