@@ -72,6 +72,15 @@ class DBCRecord {
 	}
 	
 	/**
+	 * Destructs this record
+	 */
+	public function __destruct() {
+		$this->_id = null;
+		$this->_data = null;
+		$this->_dbc = null;
+	}
+	
+	/**
 	 * Extracts all data from this record using mappings in either the given or default DBCMap
 	 */
 	public function extract(DBCMap $map=null) {
@@ -131,54 +140,128 @@ class DBCRecord {
 	}
 	
 	/**
-	 * Reads data from this record for given field and length in bytes
+	 * Reads data from this record for given field of given type
 	 */
-	public function getData($field, $length=4) {
-		return substr($this->_data, $field * DBC::FIELD_SIZE, $length);
+	public function get($field, $type=DBC::UINT) {
+		if(is_string($field)) {
+			if($map = $this->_dbc->getMap()) {
+				$field = $map->getFieldOffset($field);
+			}else{
+				throw new DBCException('Addressing fields through string values requires DBC "'.$this->_dbc->getPath().'" to have a valid mapping attached');
+				return null;
+			}
+		}
+		
+		$offset = $field * DBC::FIELD_SIZE;
+		if($offset >= strlen($this->_data)) {
+			return null;
+		}
+		
+		if($string = ($type === DBC::STRING)) {
+			$type = DBC::UINT;
+		}
+		list(,$value) = unpack($type, substr($this->_data, $offset, DBC::FIELD_SIZE));
+		if($string) {
+			$value = $this->_dbc->getString($value);
+		}
+		return $value;
+	}
+	
+	/**
+	 * Writes data into this record for given field as given type
+	 */
+	public function set($field, $value, $type=DBC::UINT) {
+		if(!$this->_dbc->isWritable()) {
+			throw new DBCException('Modifying records requires DBC "'.$this->_dbc->getPath().'" to be writable');
+			return $this;
+		}
+		
+		if(is_string($field)) {
+			if($map = $this->_dbc->getMap()) {
+				$field = $map->getFieldOffset($field);
+			}else{
+				throw new DBCException('Addressing fields through string values requires DBC "'.$this->_dbc->getPath().'" to have a valid mapping attached');
+				return $this;
+			}
+		}
+		
+		$offset = $field * DBC::FIELD_SIZE;
+		if($offset >= strlen($this->_data)) {
+			return $this;
+		}
+		
+		$handle = $this->_dbc->getHandle();
+		
+		if($string = ($type === DBC::STRING)) {
+			$value = $this->_dbc->addString($value);
+			$type = DBC::UINT;
+		}
+		$value = pack($type, $value);
+		
+		fseek($handle, $this->_offset + $offset);
+		fwrite($handle, $value);
+		$this->_data = substr_replace($this->_data, $value, $offset, 4);
+		
+		if($field === 0) {
+			$this->_dbc->index($value, $this->_pos);
+		}
+		return $this;
 	}
 	
 	/**
 	 * Reads an unsigned integer for given field from this record
 	 */
 	public function getUInt($field) {
-		if(!$this->_dbc->hasField($field)) {
-			return null;
-		}
-		list(,$uint) = unpack(DBC::UINT, $this->getData($field));
-		return $uint;
+		return $this->get($field, DBC::UINT);
+	}
+	
+	/**
+	 * Writes an unsigned integer to given field into this record
+	 */
+	public function setUInt($field, $uint) {
+		return $this->set($field, $uint, DBC::UINT);
 	}
 	
 	/**
 	 * Reads a signed integer for given field from this record
 	 */
 	public function getInt($field) {
-		if(!$this->_dbc->hasField($field)) {
-			return null;
-		}
-		list(,$int) = unpack(DBC::INT, $this->getData($field));
-		return $int;
+		return $this->get($field, DBC::INT);
+	}
+	
+	/**
+	 * Writes a signed integer for given field into this record
+	 */
+	public function setInt($field, $int) {
+		return $this->set($field, $int, DBC::INT);
 	}
 	
 	/**
 	 * Reads a float for given field from this record
 	 */
 	public function getFloat($field) {
-		if(!$this->_dbc->hasField($field)) {
-			return null;
-		}
-		list(,$float) = unpack(DBC::FLOAT, $this->getData($field));
-		return $float;
+		return $this->get($field, DBC::FLOAT);
+	}
+	
+	/**
+	 * Writes a float for given field into this record
+	 */
+	public function setFloat($field, $float) {
+		return $this->set($field, $float, DBC::FLOAT);
 	}
 	
 	/**
 	 * Reads a string for given field from this record
 	 */
 	public function getString($field) {
-		if(!$this->_dbc->hasField($field)) {
-			return null;
-		}
-		list(,$offset) = unpack(DBC::UINT, $this->getData($field));
-		return $this->_dbc->getString($offset);
+		return $this->get($field, DBC::STRING);
+	}
+	
+	/**
+	 * Writes a string for given field into this record
+	 */
+	public function setString($field, $string) {
+		return $this->set($field, $string, DBC::STRING);
 	}
 	
 	/**
