@@ -36,7 +36,6 @@ if(!defined('DBC_EXPORT')) {
 }
 
 require(DBC_DIR.DBC_DS.'DBC.class.php');
-require(DBC_DIR.DBC_DS.'DBCCreator.class.php');
 require(DBC_DIR.DBC_DS.'DBCException.class.php');
 require(DBC_DIR.DBC_DS.'DBCExporter.interface.php');
 require(DBC_DIR.DBC_DS.'DBCIterator.class.php');
