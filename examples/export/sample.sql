@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS `dbc`;
+DROP TABLE IF EXISTS `my_table`;
 
-CREATE TABLE `dbc` (
+CREATE TABLE `my_table` (
 	`id` INT(11) UNSIGNED NOT NULL, 
 	`name` TEXT NOT NULL, 
 	`points` INT(11) SIGNED NOT NULL, 
@@ -10,7 +10,7 @@ CREATE TABLE `dbc` (
 	PRIMARY KEY (`id`) 
 );
 
-INSERT INTO `dbc` VALUES 
+INSERT INTO `my_table` VALUES 
 	(1, 'John', 100, 1.79999995232, 2, 0),
 	(2, 'Tim', 1337, 1.79999995232, 1, 0),
 	(3, 'Pete', -10, 1.54999995232, 1, 2),
