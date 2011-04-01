@@ -40,9 +40,13 @@ $dbc = new DBC('./dbcs/Sample.dbc');
 $record = $dbc->getRecord(0);
 
 // Fetch a record by its first field (generally containing the id); Will return null if no record was found
-$record = $dbc->getRecordByID(4);
+$record = $dbc->getRecordByID(3);
 
 // Check for the 11th record's existence
-$exists = $dbc->hasRecord(10);
+$exists = $dbc->hasRecord(1);
 
-var_dump($record, $exists);
+// Loop over all records in this DBC and query each one
+foreach($dbc as $r) {
+	var_dump('Record #'.$r->getID().' with name: '.$r->getString(1));
+	$r->dump(true);
+}
