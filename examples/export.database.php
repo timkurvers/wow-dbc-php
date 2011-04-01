@@ -46,7 +46,4 @@ $dbe->export($dbc);
 $dbe->export($dbc, './export/sample.sql');
 
 // If you would rather export to a specific table, pass in a third parameter
-$dbe->export($dbc, null, 'my_table');
-
-// Or again, to a file
 $dbe->export($dbc, './export/sample.sql', 'my_table');
