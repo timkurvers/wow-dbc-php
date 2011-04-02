@@ -39,8 +39,8 @@ $map = new DBCMap();
 // Add 'id' field (defaults to unsigned integer)
 $map->add('id');
 
-// Add 'name' as a string field
-$map->add('name', DBC::STRING);
+// Add 'name' as a string field (Use DBC::STRING_LOC for a localized string)
+$map->add('name', DBC::STRING_LOC);
 
 // Add 'points' as a signed integer field
 $map->add('points', DBC::INT);

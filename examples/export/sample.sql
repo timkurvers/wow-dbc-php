@@ -18,4 +18,5 @@ INSERT INTO `my_table` VALUES
 	(12, 'I am providing too little fields', 0, 0, 0, 0),
 	(4, 'Helen', 100, 1.79999995232, 0, 0),
 	(8, 'Frank', 1337, 1.73000001907, 0, 0),
-	(10, 'Brad', -10, 1.54999995232, 0, 0)
+	(10, 'Brad', -10, 1.54999995232, 0, 0);
+
