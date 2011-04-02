@@ -102,6 +102,9 @@ class DBCRecord {
 			}else if($rule & DBCMap::FLOAT_MASK) {
 				$format[] = DBC::FLOAT.$count.$name;
 			}else if($rule & DBCMap::STRING_MASK) {
+				$format[] = DBC::UINT.$count.$name;
+				$strings[] = $name;
+			}else if($rule & DBCMap::STRING_LOC_MASK) {
 				$bytes += DBC::FIELD_SIZE * DBC::LOCALIZATION * $count;
 				$format[] = DBC::UINT.$count.$name.'/@'.$bytes;
 				$strings[] = $name;
@@ -157,7 +160,7 @@ class DBCRecord {
 			return null;
 		}
 		
-		if($string = ($type === DBC::STRING)) {
+		if($string = ($type === DBC::STRING || $type === DBC::STRING_LOC)) {
 			$type = DBC::UINT;
 		}
 		list(,$value) = unpack($type, substr($this->_data, $offset, DBC::FIELD_SIZE));
@@ -192,7 +195,7 @@ class DBCRecord {
 		
 		$handle = $this->_dbc->getHandle();
 		
-		if($string = ($type === DBC::STRING)) {
+		if($string = ($type === DBC::STRING || $type === DBC::STRING_LOC)) {
 			$value = $this->_dbc->addString($value);
 			$type = DBC::UINT;
 		}

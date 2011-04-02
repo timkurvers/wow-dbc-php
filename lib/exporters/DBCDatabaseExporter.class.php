@@ -124,7 +124,7 @@ class DBCDatabaseExporter implements IDBCExporter {
 				$type = 'INT(11) SIGNED';
 			}else if($rule & DBCMap::FLOAT_MASK) {
 				$type = 'FLOAT';
-			}else if($rule & DBCMap::STRING_MASK) {
+			}else if($rule & DBCMap::STRING_MASK || $rule & DBCMap::STRING_LOC_MASK) {
 				$type = 'TEXT';
 			}
 			for($i=1; $i<=$count; $i++) {

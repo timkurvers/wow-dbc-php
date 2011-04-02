@@ -68,7 +68,12 @@ class DBC implements IteratorAggregate {
 	/**
 	 * Denotes a string field type
 	 */
-	const STRING		= 'a';
+	const STRING		= 's';
+	
+	/**
+	 * Denotes a localized string field type
+	 */
+	const STRING_LOC	= 'sl';
 	
 	/**
 	 * Number of localization string fields
@@ -292,12 +297,12 @@ class DBC implements IteratorAggregate {
 					$value = pack(DBC::INT, $item);
 				}else if($rule & DBCMap::FLOAT_MASK) {
 					$value = pack(DBC::FLOAT, $item);
-				}else if($rule & DBCMap::STRING_MASK) {
+				}else if($rule & DBCMap::STRING_MASK || $rule & DBCMap::STRING_LOC_MASK) {
 					$offset = $this->addString($item);
 					$value = pack(DBC::UINT, $offset);
 				}
 				fwrite($this->_handle, $value);
-				if($rule & DBCMap::STRING_MASK) {
+				if($rule & DBCMap::STRING_LOC_MASK) {
 					fseek($this->_handle, DBC::LOCALIZATION * DBC::FIELD_SIZE, SEEK_CUR);
 				}
 			}

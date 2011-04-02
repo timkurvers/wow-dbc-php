@@ -54,7 +54,7 @@ class DBCJSONExporter implements IDBCExporter {
 				$type = 'int';
 			}else if($rule & DBCMap::FLOAT_MASK) {
 				$type = 'float';
-			}else if($rule & DBCMap::STRING_MASK) {
+			}else if($rule & DBCMap::STRING_MASK || $rule & DBCMap::STRING_LOC_MASK) {
 				$type = 'string';
 			}
 			for($i=1; $i<=$count; $i++) {

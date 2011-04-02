@@ -28,10 +28,11 @@
 /**
  * Defines a set of masks used in the DBC mappings
  */
-define('DBC_UINT',		DBCMap::UINT_MASK);
-define('DBC_INT',		DBCMap::INT_MASK);
-define('DBC_FLOAT',		DBCMap::FLOAT_MASK);
-define('DBC_STRING',	DBCMap::STRING_MASK); 
+define('DBC_UINT',			DBCMap::UINT_MASK);
+define('DBC_INT',			DBCMap::INT_MASK);
+define('DBC_FLOAT',			DBCMap::FLOAT_MASK);
+define('DBC_STRING',		DBCMap::STRING_MASK);
+define('DBC_STRING_LOC',	DBCMap::STRING_LOC_MASK);
 
 /**
  * Mapping of fields for a DBC
@@ -41,22 +42,27 @@ class DBCMap {
 	/**
 	 * Unsigned integer bit mask
 	 */
-	const UINT_MASK		= 0x0100;
+	const UINT_MASK			= 0x0100;
 	
 	/**
 	 * Signed integer bit mask
 	 */
-	const INT_MASK		= 0x0200;
+	const INT_MASK			= 0x0200;
 	
 	/**
 	 * Float bit mask
 	 */
-	const FLOAT_MASK	= 0x0400;
+	const FLOAT_MASK		= 0x0400;
 	
 	/**
 	 * String bit mask
 	 */
-	const STRING_MASK	= 0x0800;
+	const STRING_MASK		= 0x0800;
+	
+	/**
+	 * Localized string bit mask
+	 */
+	const STRING_LOC_MASK	= 0x1000;
 	
 	/**
 	 * Sample count
@@ -150,6 +156,8 @@ class DBCMap {
 			$bitmask |= self::FLOAT_MASK;
 		}else if($type === DBC::STRING) {
 			$bitmask |= self::STRING_MASK;
+		}else if($type === DBC::STRING_LOC) {
+			$bitmask |= self::STRING_LOC_MASK;
 		}
 		if($this->exists($field)) {
 			$this->_count -= self::countInBitmask($this->_fields[$field]);
@@ -186,7 +194,7 @@ class DBCMap {
 		foreach($this->_fields as $field=>$bitmask) {
 			$line = $field;
 			$diff = $spaces - strlen($field);
-			$line .= str_repeat("\t", ceil($diff / $tabWidth));			
+			$line .= str_repeat("\t", ceil($diff / $tabWidth));
 			$line .= "=\t";
 			if($bitmask & self::UINT_MASK) {
 				$line .= 'DBC_UINT';
@@ -196,6 +204,8 @@ class DBCMap {
 				$line .= 'DBC_FLOAT';
 			}else if($bitmask & self::STRING_MASK) {
 				$line .= 'DBC_STRING';
+			}else if($bitmask & self::STRING_LOC_MASK) {
+				$line .= 'DBC_STRING_LOC';
 			}
 			$count = $bitmask & 0xFF;
 			if($count > 1) {
@@ -213,7 +223,7 @@ class DBCMap {
 	 */
 	public static function countInBitmask($bitmask, $upTo=PHP_INT_MAX) {
 		$count = min(max($bitmask & 0xFF, 1), $upTo);
-		if($bitmask & self::STRING_MASK) {
+		if($bitmask & self::STRING_LOC_MASK) {
 			$count += $count * DBC::LOCALIZATION;
 		}
 		return $count;
