@@ -141,7 +141,7 @@ class DBCDatabaseExporter implements IDBCExporter {
 				fwrite($sql, ",".PHP_EOL."	(");
 			}
 			fwrite($sql, $this->join($record->extract()));
-			if(($i+1) % $this->recordsPerQuery === 0) {
+			if(($i+1) % $this->recordsPerQuery === 0 || $i === $dbc->getRecordCount() - 1) {
 				fwrite($sql, ");".PHP_EOL.PHP_EOL);
 			}else{
 				fwrite($sql, ")");
