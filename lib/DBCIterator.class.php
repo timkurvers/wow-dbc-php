@@ -83,6 +83,20 @@ class DBCIterator implements Iterator {
 	}
 	
 	/**
+	 * Retracts the position
+	 */
+	public function prev() {
+		$this->_pos--;
+	}
+	
+	/**
+	 * Seeks to given position
+	 */
+	public function seek($pos) {
+		$this->_pos = $pos;
+	}
+	
+	/**
 	 * Whether the DBC has a record at the current position
 	 */
 	public function valid() {
