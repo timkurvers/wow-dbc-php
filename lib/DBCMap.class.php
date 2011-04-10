@@ -287,7 +287,7 @@ class DBCMap {
 			if($flt > 0.6) {
 				$type = DBC::FLOAT;
 			}else if($strb > 0 && $str > 0.99 && $i+DBC::LOCALIZATION <= $fields) {
-				$type = DBC::STRING;
+				$type = DBC::STRING_LOC;
 				$i += DBC::LOCALIZATION;
 			}else if($int > 0.01) {
 				$type = DBC::INT;
