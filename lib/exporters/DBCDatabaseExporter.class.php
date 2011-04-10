@@ -93,6 +93,9 @@ class DBCDatabaseExporter implements IDBCExporter {
 			if(is_string($value)) {
 				$value = '\''.$this->escape($value).'\'';
 			}
+			if($value === null) {
+				$value = 'NULL';
+			}
 		}
 		return implode(', ', $copy);
 	}	
