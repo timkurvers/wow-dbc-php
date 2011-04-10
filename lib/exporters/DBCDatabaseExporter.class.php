@@ -121,6 +121,7 @@ class DBCDatabaseExporter implements IDBCExporter {
 		$fields = $map->getFields();
 		foreach($fields as $name=>$rule) {
 			$count = max($rule & 0xFF, 1);
+			$null = false;
 			if($rule & DBCMap::UINT_MASK) {
 				$type = 'INT(11) UNSIGNED';
 			}else if($rule & DBCMap::INT_MASK) {
@@ -129,10 +130,11 @@ class DBCDatabaseExporter implements IDBCExporter {
 				$type = 'FLOAT';
 			}else if($rule & DBCMap::STRING_MASK || $rule & DBCMap::STRING_LOC_MASK) {
 				$type = 'TEXT';
+				$null = true;
 			}
 			for($i=1; $i<=$count; $i++) {
 				$suffix = ($count > 1) ? $i : '';
-				$dd[] = '	`'.$this->escape($name).$suffix.'` '.$type.' NOT NULL';
+				$dd[] = '	`'.$this->escape($name).$suffix.'` '.$type.' '.((!$null) ? 'NOT' : '').' NULL';
 			}
 		}
 		reset($fields);
