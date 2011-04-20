@@ -33,12 +33,12 @@ interface IDBCExporter {
 	/**
 	 * Denotes the standard PHP output stream (default export target)
 	 */
-	const OUTPUT	= 'php://output';
+	const OUTPUT    = 'php://output';
 	
 	/**
 	 * Exception message when DBC has no mapping attached
 	 */
-	const NO_MAP	= 'Given DBC has no map attached';
+	const NO_MAP    = 'Given DBC has no map attached';
 	
 	/**
 	 * Exports the given DBC using this exporter to the given target(-stream)
