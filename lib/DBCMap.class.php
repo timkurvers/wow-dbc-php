@@ -28,11 +28,11 @@
 /**
  * Defines a set of masks used in the DBC mappings
  */
-define('DBC_UINT',			DBCMap::UINT_MASK);
-define('DBC_INT',			DBCMap::INT_MASK);
-define('DBC_FLOAT',			DBCMap::FLOAT_MASK);
-define('DBC_STRING',		DBCMap::STRING_MASK);
-define('DBC_STRING_LOC',	DBCMap::STRING_LOC_MASK);
+define('DBC_UINT',          DBCMap::UINT_MASK);
+define('DBC_INT',           DBCMap::INT_MASK);
+define('DBC_FLOAT',         DBCMap::FLOAT_MASK);
+define('DBC_STRING',        DBCMap::STRING_MASK);
+define('DBC_STRING_LOC',    DBCMap::STRING_LOC_MASK);
 
 /**
  * Mapping of fields for a DBC
@@ -42,27 +42,27 @@ class DBCMap {
 	/**
 	 * Unsigned integer bit mask
 	 */
-	const UINT_MASK			= 0x0100;
+	const UINT_MASK         = 0x0100;
 	
 	/**
 	 * Signed integer bit mask
 	 */
-	const INT_MASK			= 0x0200;
+	const INT_MASK          = 0x0200;
 	
 	/**
 	 * Float bit mask
 	 */
-	const FLOAT_MASK		= 0x0400;
+	const FLOAT_MASK        = 0x0400;
 	
 	/**
 	 * String bit mask
 	 */
-	const STRING_MASK		= 0x0800;
+	const STRING_MASK       = 0x0800;
 	
 	/**
 	 * Localized string bit mask
 	 */
-	const STRING_LOC_MASK	= 0x1000;
+	const STRING_LOC_MASK   = 0x1000;
 	
 	/**
 	 * Sample count
@@ -279,16 +279,29 @@ class DBCMap {
 		
 		for($i=1; $i<=$fields; $i++) {
 			$probs = $matrix[$i];
-			$int = ($probs & 0x0000FF) / $samples;
-			$flt = (($probs & 0x00FF00) >> 8) / $samples;
-			$str = (($probs & 0xFF0000) >> 16) / $samples;
-			$strb = ($probs & 0xFF000000) >> 24;
+			$int = ($probs & 0x000000FF) / $samples;
+			$flt = (($probs & 0x0000FF00) >> 8) / $samples;
+			$str = (($probs & 0x00FF0000) >> 16) / $samples;
+			$strbit = ($probs & 0xFF000000) >> 24;
 			$field = 'field'.$i;
 			if($flt > 0.6) {
 				$type = DBC::FLOAT;
-			}else if($strb > 0 && $str > 0.99 && $i+DBC::LOCALIZATION <= $fields) {
-				$type = DBC::STRING_LOC;
-				$i += DBC::LOCALIZATION;
+			}else if($strbit > 0 && $str > 0.99) {
+				$type = DBC::STRING;
+				if($i + DBC::LOCALIZATION <= $fields) {
+					$type = DBC::STRING_LOC;
+					for($j=$i+1; $j<=$i+DBC::LOCALIZATION; $j++) {
+						$probs = $matrix[$j];
+						$str = (($probs & 0x00FF0000) >> 16) / $samples;
+						$strbit = ($probs & 0xFF000000) >> 24;
+						if($str !== 1 || $strbit !== 0) {
+							$type = DBC::STRING;
+						}
+					}
+					if($type === DBC::STRING_LOC) {
+						$i += DBC::LOCALIZATION;
+					}
+				}
 			}else if($int > 0.01) {
 				$type = DBC::INT;
 			}else{
