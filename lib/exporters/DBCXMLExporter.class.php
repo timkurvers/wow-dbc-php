@@ -68,7 +68,9 @@ class DBCXMLExporter implements IDBCExporter {
 			$pairs = $record->extract();
 			$erecord = $erecords->appendChild($dom->createElement('record'));
 			foreach($pairs as $field=>$value) {
-				$erecord->appendChild($dom->createElement($field, $value));
+				$attr = $dom->createAttribute($field);
+				$attr->value = $value;
+				$erecord->appendChild($attr);
 			}
 		}
 		
