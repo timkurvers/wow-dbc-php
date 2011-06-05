@@ -154,7 +154,7 @@ class DBC implements IteratorAggregate {
 			throw new DBCException('DBC "'.$path.'" has an invalid signature and is therefore not valid');
 			return;
 		}
-		if($size < 20) {
+		if($size < self::HEADER_SIZE) {
 			throw new DBCException('DBC "'.$path.'" has a malformed header');
 			return;
 		}
