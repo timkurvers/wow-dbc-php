@@ -28,6 +28,11 @@
 class DBC implements IteratorAggregate {
 	
 	/**
+	 * Version of the World of Warcraft DBC Library
+	 */
+	const VERSION = 'v1.0';
+	
+	/**
 	 * Defines signature for a DBC file
 	 */
 	const SIGNATURE = 'WDBC';
