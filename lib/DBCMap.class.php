@@ -141,6 +141,31 @@ class DBCMap {
 	}
 	
 	/**
+	 * Returns type for given field offset
+	 */
+	public function getFieldType($field) {
+		
+		if(!isset($this->_fields[$field])) {
+			if(preg_match('#(.+?)\d+?$#', $field, $match) === 1) {
+				list(, $field) = $match;
+			}
+		}
+		
+		$rule = $this->_fields[$field];
+		if($rule & self::INT_MASK) {
+			return DBC::INT;
+		}else if($rule & self::FLOAT_MASK) {
+			return DBC::FLOAT;
+		}else if($rule & self::STRING_MASK) {
+			return DBC::STRING;
+		}else if($rule & self::STRING_LOC_MASK) {
+			return DBC::STRING_LOC;
+		}else{
+			return DBC::UINT;
+		}
+	}
+	
+	/**
 	 * Adds a field using given type and count
 	 */
 	public function add($field, $type=DBC::UINT, $count=0) {
