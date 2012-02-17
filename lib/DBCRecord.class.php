@@ -142,15 +142,18 @@ class DBCRecord {
 	/**
 	 * Reads data from this record for given field of given type
 	 */
-	public function get($field, $type=DBC::UINT) {
+	public function get($field, $type=null) {
 		if(is_string($field)) {
 			if($map = $this->_dbc->getMap()) {
+				$type = $map->getFieldType($field);
 				$field = $map->getFieldOffset($field);
 			}else{
 				throw new DBCException('Addressing fields through string values requires DBC "'.$this->_dbc->getPath().'" to have a valid mapping attached');
 				return null;
 			}
 		}
+		
+		$type = ($type === null) ? DBC::UINT : $type;
 		
 		$offset = $field * DBC::FIELD_SIZE;
 		if($offset >= strlen($this->_data)) {
@@ -170,7 +173,7 @@ class DBCRecord {
 	/**
 	 * Writes data into this record for given field as given type
 	 */
-	public function set($field, $value, $type=DBC::UINT) {
+	public function set($field, $value, $type=null) {
 		if(!$this->_dbc->isWritable()) {
 			throw new DBCException('Modifying records requires DBC "'.$this->_dbc->getPath().'" to be writable');
 			return $this;
@@ -178,12 +181,15 @@ class DBCRecord {
 		
 		if(is_string($field)) {
 			if($map = $this->_dbc->getMap()) {
+				$type = $map->getFieldType($field);
 				$field = $map->getFieldOffset($field);
 			}else{
 				throw new DBCException('Addressing fields through string values requires DBC "'.$this->_dbc->getPath().'" to have a valid mapping attached');
 				return $this;
 			}
 		}
+		
+		$type = ($type === null) ? DBC::UINT : $type;
 		
 		$offset = $field * DBC::FIELD_SIZE;
 		if($offset >= strlen($this->_data)) {
