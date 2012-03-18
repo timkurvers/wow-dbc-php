@@ -90,7 +90,8 @@ class DBCRecord {
 		$format = array();
 		$fields = $map->getFields();
 		foreach($fields as $name=>$rule) {
-			$count = max($rule & 0xFF, 1);
+			$rulecount = $rule & 0xFF;
+			$count = max($rulecount, 1);
 			$bytes += DBC::FIELD_SIZE * $count;
 			if($rule & DBCMap::UINT_MASK) {
 				$format[] = DBC::UINT.$count.$name;
@@ -100,13 +101,26 @@ class DBCRecord {
 				$format[] = DBC::FLOAT.$count.$name;
 			}else if($rule & DBCMap::STRING_MASK) {
 				$format[] = DBC::UINT.$count.$name;
-				$strings[] = $name;
+				if($rulecount) {
+					for($i=1; $i<=$rulecount; $i++) {
+						$strings[] = $name.$i;
+					}
+				}else{
+					$strings[] = $name;
+				}
 			}else if($rule & DBCMap::STRING_LOC_MASK) {
 				$bytes += DBC::FIELD_SIZE * DBC::LOCALIZATION * $count;
 				$format[] = DBC::UINT.$count.$name.'/@'.$bytes;
-				$strings[] = $name;
+				if($rulecount) {
+					for($i=1; $i<=$rulecount; $i++) {
+						$strings[] = $name.$i;
+					}
+				}else{
+					$strings[] = $name;
+				}
 			}
 		}
+		
 		$format = implode('/', $format);
 		$fields = unpack($format, $this->_data);
 		foreach($strings as $string) {
