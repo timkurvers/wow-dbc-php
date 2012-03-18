@@ -82,7 +82,7 @@ class DBCMap {
 	public function __construct(array $fields=null) {
 		$this->_fields = ($fields !== null) ? $fields : array();
 		foreach($this->_fields as $field=>&$rule) {
-			if($rule === null) {
+			if(!$rule) {
 				$rule = self::UINT_MASK;
 			}
 			$rule = (int)$rule;
