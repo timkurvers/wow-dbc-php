@@ -2,23 +2,23 @@
 /**
  * World of Warcraft DBC Library
  * Copyright (c) 2011 Tim Kurvers <http://www.moonsphere.net>
- * 
+ *
  * This library allows creation, reading and export of World of Warcraft's
  * client-side database files. These so-called DBCs store information
  * required by the client to operate successfully and can be extracted
  * from the MPQ archives of the actual game client.
- * 
- * The contents of this file are subject to the MIT License, under which 
+ *
+ * The contents of this file are subject to the MIT License, under which
  * this library is licensed. See the LICENSE file for the full license.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- * 
+ *
  * @author	Tim Kurvers <tim@moonsphere.net>
  */
 
@@ -35,47 +35,47 @@ define('DBC_STRING_LOC',    DBCMap::STRING_LOC_MASK);
  * Mapping of fields for a DBC
  */
 class DBCMap {
-	
+
 	/**
 	 * Unsigned integer bit mask
 	 */
 	const UINT_MASK         = 0x0100;
-	
+
 	/**
 	 * Signed integer bit mask
 	 */
 	const INT_MASK          = 0x0200;
-	
+
 	/**
 	 * Float bit mask
 	 */
 	const FLOAT_MASK        = 0x0400;
-	
+
 	/**
 	 * String bit mask
 	 */
 	const STRING_MASK       = 0x0800;
-	
+
 	/**
 	 * Localized string bit mask
 	 */
 	const STRING_LOC_MASK   = 0x1000;
-	
+
 	/**
 	 * Sample count
 	 */
 	const SAMPLES = 255;
-	
+
 	/**
 	 * Holds all fields defined in this mapping in name/rule pairs
 	 */
 	private $_fields = null;
-	
+
 	/**
 	 * Actual number of raw fields in this mapping
 	 */
 	private $_count = 0;
-	
+
 	/**
 	 * Constructs a new mapping (with optional given fields)
 	 */
@@ -89,28 +89,28 @@ class DBCMap {
 			$this->_count += self::countInBitmask($rule);
 		}
 	}
-	
+
 	/**
 	 * Destructs this mapping
 	 */
 	public function __destruct() {
-		$this->_fields = null;	
+		$this->_fields = null;
 	}
-	
+
 	/**
 	 * Returns the set of fields currently in this mapping
 	 */
 	public function getFields() {
 		return $this->_fields;
 	}
-	
+
 	/**
 	 * Returns the actual amount of fields required in the DBC
 	 */
 	public function getFieldCount() {
 		return $this->_count;
 	}
-	
+
 	/**
 	 * Returns the actual offset for given field
 	 */
@@ -122,13 +122,13 @@ class DBCMap {
 				$suffix = (int)$suffix - 1;
 			}
 		}
-		
+
 		if(!isset($this->_fields[$field])) {
 			return -1;
 		}
-		
+
 		$target = $field;
-		
+
 		$offset = 0;
 		foreach($this->_fields as $field=>$rule) {
 			if($target === $field) {
@@ -139,18 +139,18 @@ class DBCMap {
 		}
 		return -1;
 	}
-	
+
 	/**
 	 * Returns type for given field offset
 	 */
 	public function getFieldType($field) {
-		
+
 		if(!isset($this->_fields[$field])) {
 			if(preg_match('#(.+?)\d+?$#', $field, $match) === 1) {
 				list(, $field) = $match;
 			}
 		}
-		
+
 		$rule = $this->_fields[$field];
 		if($rule & self::INT_MASK) {
 			return DBC::INT;
@@ -164,7 +164,7 @@ class DBCMap {
 			return DBC::UINT;
 		}
 	}
-	
+
 	/**
 	 * Adds a field using given type and count
 	 */
@@ -187,14 +187,14 @@ class DBCMap {
 		$this->_count += self::countInBitmask($bitmask);
 		$this->_fields[$field] = $bitmask;
 	}
-	
+
 	/**
 	 * Whether given field exists in this mapping
 	 */
 	public function exists($field) {
 		return (isset($this->_fields[$field]));
 	}
-	
+
 	/**
 	 * Removes given field from the mapping provided it exists
 	 */
@@ -204,14 +204,14 @@ class DBCMap {
 			unset($this->_fields[$field]);
 		}
 	}
-	
+
 	/**
 	 * Exports this mapping in INI-format to given target (defaults to output stream) with given tab width in spaces
 	 */
 	public function toINI($target=IDBCExporter::OUTPUT, $tabWidth=4) {
 		$maxlen = max(array_map('strlen', array_keys($this->_fields)));
 		$spaces = ceil($maxlen / $tabWidth) * $tabWidth;
-		
+
 		$handle = fopen($target, 'w+');
 		foreach($this->_fields as $field=>$bitmask) {
 			$line = $field;
@@ -234,12 +234,12 @@ class DBCMap {
 				$line .= ' | '.$count;
 			}
 			$line .= PHP_EOL;
-			
+
 			fwrite($handle, $line);
 		}
 		fclose($handle);
 	}
-	
+
 	/**
 	 * Calculates the number of fields used up by the given bitmask
 	 */
@@ -250,22 +250,22 @@ class DBCMap {
 		}
 		return $count;
 	}
-	
+
 	/**
 	 * Constructs a new mapping from given INI-file
 	 */
 	public static function fromINI($ini) {
 		return new self(parse_ini_file($ini));
 	}
-	
+
 	/**
 	 * Attempts to construct a map based on given DBC, predicting what each field could possibly hold by way of sampling
 	 */
 	public static function fromDBC(DBC $dbc, $attach=true) {
-		
+
 		$fields = $dbc->getFieldCount();
 		$samples = ($dbc->getRecordCount() > self::SAMPLES) ? self::SAMPLES : $dbc->getRecordCount();
-		
+
 		$block = $dbc->getStringBlock();
 		preg_match_all('#\0#', $block, $matches, PREG_OFFSET_CAPTURE);
 		$strings = array();
@@ -275,9 +275,9 @@ class DBCMap {
 				$strings[$offset] = true;
 			}
 		}
-		
+
 		$matrix = array_fill(1, $fields, 0);
-		
+
 		for($i=0; $i<$samples; $i++) {
 			$record = $dbc->getRecord($i);
 			$values = $record->asArray();
@@ -296,9 +296,9 @@ class DBCMap {
 				}
 			}
 		}
-		
+
 		$map = new self();
-		
+
 		for($i=1; $i<=$fields; $i++) {
 			$probs = $matrix[$i];
 			$int = ($probs & 0x000000FF) / $samples;
@@ -331,14 +331,14 @@ class DBCMap {
 			}
 			$map->add($field, $type);
 		}
-		
+
 		if($attach && $dbc->getMap() === null) {
 			$dbc->attach($map);
 		}
-		
+
 		return $map;
 	}
-	
+
 	/**
 	 * Whether given set of bits is a probable IEEE-754 single precision floating point number
 	 * @see	http://stackoverflow.com/questions/2485388/heuristic-to-identify-if-a-series-of-4-bytes-chunks-of-data-are-integers-or-float/2953466#2953466
@@ -347,7 +347,7 @@ class DBCMap {
 		$sign = ($bits & 0x80000000) != 0;
 		$exp = (($bits & 0x7F800000) >> 23) - 127;
 		$mant = $bits & 0x007FFFFF;
-		
+
 		if(-30 <= $exp && $exp <= 30) {
 			return true;
 		}
@@ -356,5 +356,5 @@ class DBCMap {
 		}
 		return false;
 	}
-	
+
 }

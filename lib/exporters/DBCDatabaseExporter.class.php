@@ -2,23 +2,23 @@
 /**
  * World of Warcraft DBC Library
  * Copyright (c) 2011 Tim Kurvers <http://www.moonsphere.net>
- * 
+ *
  * This library allows creation, reading and export of World of Warcraft's
  * client-side database files. These so-called DBCs store information
  * required by the client to operate successfully and can be extracted
  * from the MPQ archives of the actual game client.
- * 
- * The contents of this file are subject to the MIT License, under which 
+ *
+ * The contents of this file are subject to the MIT License, under which
  * this library is licensed. See the LICENSE file for the full license.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- * 
+ *
  * @author	Tim Kurvers <tim@moonsphere.net>
  */
 
@@ -26,43 +26,43 @@
  * Database Exporter
  */
 class DBCDatabaseExporter implements IDBCExporter {
-	
+
 	/**
 	 * Default maximum number of records per INSERT-query
 	 */
 	const RECORDS_PER_QUERY = 1000;
-	
+
 	/**
 	 * Reference to PDO instance (if any)
 	 */
 	private $_pdo = null;
-	
+
 	/**
 	 * Maximum number of records per INSERT-query
 	 */
 	public $recordsPerQuery = self::RECORDS_PER_QUERY;
-	
+
 	/**
 	 * Constructs a new database exporter with given PDO instance (optional)
 	 */
 	public function __construct(PDO $pdo=null, $recordsPerQuery=self::RECORDS_PER_QUERY) {
 		$this->setPDO($pdo);
 	}
-	
+
 	/**
 	 * Sets new PDO instance
 	 */
 	public function setPDO(PDO $pdo=null) {
 		$this->_pdo = $pdo;
 	}
-	
+
 	/**
 	 * Retrieves the PDO instance
 	 */
 	public function getPDO() {
 		return $this->_pdo;
 	}
-	
+
 	/**
 	 * Escapes given string (nested collections of strings allowed)
 	 * @see	http://php.net/manual/en/function.mysql-real-escape-string.php#101248
@@ -80,7 +80,7 @@ class DBCDatabaseExporter implements IDBCExporter {
 		}
 		return $string;
 	}
-	
+
 	/**
 	 * Joins given fields into a comma-separated string
 	 */
@@ -95,24 +95,24 @@ class DBCDatabaseExporter implements IDBCExporter {
 			}
 		}
 		return implode(', ', $copy);
-	}	
-	
+	}
+
 	/**
 	 * Exports given DBC in SQL format to given target (defaults to output stream) using given table name
 	 */
 	public function export(DBC $dbc, $target=self::OUTPUT, $table='dbc') {
 		$target = ($target === null) ? self::OUTPUT : $target;
-		
+
 		$map = $dbc->getMap();
 		if($map === null) {
 			throw new DBCException(self::NO_MAP);
-			return;	
+			return;
 		}
-		
+
 		$sql = fopen($target, 'w+');
-		
+
 		$table = "`".$this->escape($table)."`";
-		
+
 		fwrite($sql, "DROP TABLE IF EXISTS ".$table.";".PHP_EOL.PHP_EOL);
 		$dd = array();
 		$fields = $map->getFields();
@@ -150,9 +150,9 @@ class DBCDatabaseExporter implements IDBCExporter {
 			}
 		}
 		fclose($sql);
-		
+
 		return $target;
-		
+
 	}
-	
+
 }
