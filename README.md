@@ -16,6 +16,6 @@ Check out the `examples` to get started.
 
 ## Usage Notes
 
-* String localization will only provide accurate results when used with the US English (enUS) or British English (enGB) distributed DBCs.
+* String localization will only provide accurate results when used with US English (enUS) or British English (enGB) distributed DBCs.
 
 * Attempting to read DBCs with a non-standard field size, **may fail**.
