@@ -4,7 +4,7 @@
 - Fixed rule count bug when explicitly defining count of one
 - Fixed dealing with sequential string mappings (thanks Artox!)
 - Ensure empty field mappings default to unsigned integer
-- `DBCRecord.get/set` now use mappings correctly (thanks Artox!)
+- `DBCRecord.get` and `DBCRecord.set` now use mappings correctly (thanks Artox!)
 - Implemented `DBCMap::getFieldType`
 
 ### v1.0 - August 5, 2011
