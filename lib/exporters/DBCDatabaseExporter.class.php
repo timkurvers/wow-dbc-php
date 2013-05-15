@@ -131,20 +131,20 @@ class DBCDatabaseExporter implements IDBCExporter {
 			}
 			for($i=1; $i<=$count; $i++) {
 				$suffix = ($count > 1) ? $i : '';
-				$dd[] = '	`'.$this->escape($name).$suffix.'` '.$type.' '.((!$null) ? 'NOT' : '').' NULL';
+				$dd[] = '	`'.$this->escape($name).$suffix.'` '.$type.' '.(($null) ? 'NULL' : 'NOT NULL');
 			}
 		}
 		reset($fields);
-		fwrite($sql, "CREATE TABLE ".$table." (".PHP_EOL.implode(', '.PHP_EOL, $dd).', '.PHP_EOL.'	PRIMARY KEY (`'.key($fields).'`) '.PHP_EOL.');'.PHP_EOL.PHP_EOL);
+		fwrite($sql, "CREATE TABLE ".$table." (".PHP_EOL.implode(','.PHP_EOL, $dd).','.PHP_EOL.'	PRIMARY KEY (`'.key($fields).'`)'.PHP_EOL.');'.PHP_EOL.PHP_EOL);
 		foreach($dbc as $i=>$record) {
 			if($i % $this->recordsPerQuery === 0) {
-				fwrite($sql, "INSERT INTO ".$table." VALUES ".PHP_EOL."	(");
+				fwrite($sql, "INSERT INTO ".$table." VALUES".PHP_EOL."	(");
 			}else{
 				fwrite($sql, ",".PHP_EOL."	(");
 			}
 			fwrite($sql, $this->join($record->extract()));
 			if(($i+1) % $this->recordsPerQuery === 0 || $i === $dbc->getRecordCount() - 1) {
-				fwrite($sql, ");".PHP_EOL.PHP_EOL);
+				fwrite($sql, ");".PHP_EOL);
 			}else{
 				fwrite($sql, ")");
 			}
