@@ -312,6 +312,10 @@ class DBC implements IteratorAggregate {
 
 		fseek($this->_handle, 4);
 		fwrite($this->_handle, pack(self::UINT, ++$this->_recordCount));
+
+		// New record data may have overwritten the string-block
+		// Invalidate its size to enforce writing it on finalization
+		$this->_stringBlockSize = 0;
 	}
 
 	/**
