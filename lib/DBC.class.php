@@ -265,7 +265,7 @@ class DBC implements IteratorAggregate {
 		if(isset($args[0])) {
 			$scalars = true;
 			foreach($args as $arg) {
-				if($scalars && !is_scalar($arg)) {
+				if(!is_null($arg) && !is_scalar($arg)) {
 					$scalars = false;
 				}
 				if(is_array($arg)) {
