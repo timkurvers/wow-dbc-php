@@ -1,6 +1,6 @@
 # World of Warcraft DBC Library
 
-![Unmaintained](https://img.shields.io/badge/%E2%9A%A0-unmaintained-red.svg)
+![Unmaintained](https://img.shields.io/badge/%E2%9A%A0-unmaintained-red.svg?style=flat)
 
 This library allows creation, reading and export of World of Warcraft's client-side database files.
 
